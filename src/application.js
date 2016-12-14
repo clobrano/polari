@@ -17,6 +17,7 @@ const TelepathyClient = imports.telepathyClient;
 const UserTracker = imports.userTracker;
 const Utils = imports.utils;
 const NetworksManager = imports.networksManager;
+const InitSetup = imports.initSetup;
 
 const MAX_RETRIES = 3;
 
@@ -202,11 +203,24 @@ const Application = new Lang.Class({
                     return;
                 this.emit('prepare-shutdown');
             });
+
+            if (true /*first time startup*/) {
+                let setupDialog = new InitSetup.InitSetup({ application: this });
+                setupDialog.show_all();
+            }
+
+/*            let window = new MainWindow.MainWindow({ application: this });
+            window.connect('destroy', () => {
+                if (this._settings.get_boolean('run-in-background'))
+                    return;
+                this.emit('prepare-shutdown');
+            });
+
             window.connect('notify::active-room',
                            () => { this.emit('room-focus-changed'); });
             window.connect('notify::is-active',
                            () => { this.emit('room-focus-changed'); });
-            window.show_all();
+            window.show_all();*/
         }
         this.active_window.present();
     },

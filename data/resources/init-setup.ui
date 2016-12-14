@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="Gjs_InitSetup">
+    <property name="icon-name">org.gnome.Polari</property>
+    <property name="default-width">500</property>
+    <property name="default-height">500</property>
+
+    <!-- HEADERBAR START -->
+    <child type="titlebar">
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="hexpand">True</property>
+        <child>
+          <object class="GtkHeaderBar">
+            <property name="visible">True</property>
+            <property name="hexpand">True</property>
+            <property name="show-close-button">False</property>
+            <property name="title">Polari Setup</property>
+            <child>
+              <object class="GtkStack" id="leftHeaderStack">
+                <property name="visible">True</property>
+                <property name="transition-type">crossfade</property>
+                <child>
+                  <object class="GtkButton" id="cancelButton">
+                    <property name="label">Cancel</property>
+                    <property name="visible">True</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
+                  </object>
+                  <packing>
+                    <property name="name">cancelButton</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="backButton">
+                    <property name="label">Back</property>
+                    <property name="visible">True</property>
+                    <property name="halign">end</property>
+                    <property name="valign">center</property>
+                  </object>
+                  <packing>
+                    <property name="name">backButton</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="pack-type">start</property>
+              </packing>
+            </child>
+            <child type="title">
+              <object class="GtkLabel">
+                <property name="label">Polari Setup</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStack" id="rightHeaderStack">
+                <property name="visible">True</property>
+                <property name="transition-type">crossfade</property>
+                <child>
+                  <object class="GtkButton" id="nextButton">
+                    <property name="label">Next</property>
+                    <property name="visible">True</property>
+                    <property name="halign">center</property>
+                    <property name="valign">center</property>
+                  </object>
+                  <packing>
+                    <property name="name">nextButton</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="doneButton">
+                    <property name="label">Done</property>
+                    <property name="visible">True</property>
+                    <property name="halign">end</property>
+                    <property name="valign">center</property>
+                  </object>
+                  <packing>
+                    <property name="name">doneButton</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="pack-type">end</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <!-- HEADERBAR END -->
+
+    <!-- CONTENT WINDOW START -->
+    <child>
+      <object class="GtkStack" id="contentStack">
+        <property name="visible">True</property>
+        <property name="transition-type">slide-left-right</property>
+        <!-- MAIN STACK PAGE 1 START -->
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="visible">True</property>
+            <property name="valign">center</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Welcome to Polari</property>
+                <style>
+                  <class name="polari-background-title"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Polari is an easy way to chat using IRC.</property>
+                <style>
+                  <class name="polari-background-description"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Select a connection to get started.</property>
+                <style>
+                  <class name="polari-background-description"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="Gjs_InitSetupConnectionsList" id="connectionPageList">
+                <property name="visible">True</property>
+                <property name="vexpand">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="name">connectionPage</property>
+          </packing>
+        </child>
+        <!-- MAIN STACK PAGE 1 END -->
+        <!-- MAIN STACK PAGE 2 START -->
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="visible">True</property>
+            <property name="valign">center</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Welcome to Polari</property>
+                <style>
+                  <class name="polari-background-title"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Select rooms you want to connect to. You can add more</property>
+                <style>
+                  <class name="polari-background-description"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">connections and rooms later, by clicking the + button.</property>
+                <style>
+                  <class name="polari-background-description"/>
+                </style>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="name">roomPage</property>
+          </packing>
+        </child>
+        <!-- MAIN STACK PAGE 2 END -->
+      </object>
+    </child>
+    <!-- CONTENT WINDOW END -->
+
+  </template>
+</interface>
