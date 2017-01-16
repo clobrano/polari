@@ -8,6 +8,7 @@ const Tp = imports.gi.TelepathyGLib;
 
 const Lang = imports.lang;
 const NetworksManager = imports.networksManager;
+const Utils = imports.utils;
 
 const CONFIGURE_TIMEOUT = 100; /* ms */
 
@@ -15,9 +16,6 @@ const SetupPage = {
     CONNECTION: 0,
     ROOM: 1
 };
-
-
-// SETUP WINDOW CONFIG
 
 const InitSetup = new Lang.Class({
     Name: 'InitSetup',
@@ -30,13 +28,17 @@ const InitSetup = new Lang.Class({
                         'nextButton',
                         'doneButton',
                         'contentStack',
-                        'connectionPageList' ],
+                        'connectionPageList',
+                        'serverRoomList',
+                        'nameEntry',
+                        'spinner' ],
 
     _init: function(params) {
 
         this.parent(params);
 
-        // Allow css styling
+        this._currentAccount = null;
+
         this._addApplicationStyle();
 
         this._setupConnectionPage();
@@ -70,21 +72,26 @@ const InitSetup = new Lang.Class({
                 this.destroy();
             }));
 
-        this._connectionPageList.connect('row-selected', Lang.bind(this,
-            function() {
+        this._connectionPageList.connect('account-created', Lang.bind(this,
+            function(w, account) {
                 this._setPage(SetupPage.ROOM);
+                this._currentAccount = account;
+                this._serverRoomList.setAccount(account);
             }));
     },
 
     _setPage: function(page) {
         let isConnection = page == SetupPage.CONNECTION;
 
+        if (!isConnection)
+            this._nameEntry.grab_focus();
+
         this._contentStack.visible_child_name = isConnection ? 'connectionPage'
-                                                       : 'roomPage';
+                                                             : 'roomPage';
         this._leftHeaderStack.visible_child_name = isConnection ? 'cancelButton'
-                                                          : 'backButton';
+                                                                : 'backButton';
         this._rightHeaderStack.visible_child_name = isConnection ? 'nextButton'
-                                                           : 'doneButton';
+                                                                 : 'doneButton';
     },
 
     _setupRoomPage: function() {
@@ -92,15 +99,66 @@ const InitSetup = new Lang.Class({
             function() {
                 this._setPage(SetupPage.CONNECTION);
             }));
+
+        this._doneButton.connect('clicked', Lang.bind(this,
+            function() {
+                this._joinRoom();
+                this.destroy();
+            }));
+
+        this._doneButton.sensitive = false;
+
+        this._nameEntry.connect('changed',
+                                Lang.bind(this, this._updateCanJoin));
+        this._serverRoomList.connect('notify::can-join',
+                                     Lang.bind(this, this._updateCanJoin));
+        this._serverRoomList.bind_property('loading', this._spinner, 'active',
+                                            GObject.BindingFlags.SYNC_CREATE);
+    },
+
+    get _page() {
+        if (this._contentStack.visible_child_name == 'roomPage')
+            return SetupPage.ROOM;
+        else
+            return SetupPage.MAIN;
+    },
+
+    _updateCanJoin: function() {
+        let sensitive = false;
+
+        if (this._page == SetupPage.ROOM)
+            sensitive = this._serverRoomList.can_join;
+
+        this._doneButton.sensitive = sensitive;
+    },
+
+    _joinRoom: function() {
+        this.hide();
+
+        let toJoinRooms = this._serverRoomList.selectedRooms;
+        if (this._nameEntry.get_text_length() > 0)
+            toJoinRooms.push(this._nameEntry.get_text());
+
+        let account = this._currentAccount;
+        toJoinRooms.forEach(function(room) {
+            if (room[0] != '#')
+                room = '#' + room;
+
+            let app = Gio.Application.get_default();
+            let action = app.lookup_action('join-room');
+            action.activate(GLib.Variant.new('(ssu)',
+                                             [ account.get_object_path(),
+                                             room,
+                                             Utils.getTpEventTime() ]));
+        });
     }
 
 });
 
-// CONNECTION LIST SETUP
 const InitSetupConnectionsList = new Lang.Class({
     Name: 'InitSetupConnectionsList',
     Extends: Gtk.Frame,
-    Signals: { 'row-selected' : {} },
+    Signals: { 'account-created': { param_types: [Tp.Account.$gtype] } },
 
     _init: function(params) {
         this.parent(params);
@@ -126,20 +184,33 @@ const InitSetupConnectionsList = new Lang.Class({
     },
 
     _networksChanged: function() {
-
-        let networkList = this._networksManager.networks;
-        for (let n of networkList) {
-            if (this._networksManager.getNetworkIsFavorite(n.id)) {
-                this._rows.set(n.id,
-                               new InitSetupConnectionRow({ id: n.id }));
-                this._list.add(this._rows.get(n.id));
-            }
+        for (let network of this._networksManager.favoriteNetworks) {
+            this._rows.set(network.id,
+                           new InitSetupConnectionRow({ id: network.id }));
+            this._list.add(this._rows.get(network.id));
         }
     },
 
-    _onRowActivated: function() {
-        this.emit('row-selected');
-    },
+    _onRowActivated: function(list, row) {
+        let name = this._networksManager.getNetworkName(row.id);
+        let req = new Tp.AccountRequest({ account_manager: Tp.AccountManager.dup(),
+                                          connection_manager: 'idle',
+                                          protocol: 'irc',
+                                          display_name: name });
+        req.set_service(row.id);
+        req.set_enabled(true);
+
+        let details = this._networksManager.getNetworkDetails(row.id);
+
+        for (let prop in details)
+            req.set_parameter(prop, details[prop]);
+
+        req.create_account_async(Lang.bind(this,
+            function(r, res) {
+                let account = req.create_account_finish(res);
+                this.emit('account-created', account);
+            }));
+    }
 });
 
 const InitSetupConnectionRow = new Lang.Class({
@@ -163,5 +234,9 @@ const InitSetupConnectionRow = new Lang.Class({
 
         this.show_all();
     },
+
+    get id() {
+        return this._id;
+    }
 
 });

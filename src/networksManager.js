@@ -71,6 +71,15 @@ const NetworksManager = new Lang.Class({
         return this._networks;
     },
 
+    get favoriteNetworks() {
+        let favNetworks = [ ];
+        for (let network of this._networks) {
+            if (this.getNetworkIsFavorite(network.id))
+                favNetworks.push(network);
+        }
+        return favNetworks;
+    },
+
     getAccountIsPredefined: function(account) {
         return account && this._networksById.get(account.service) != null;
     },

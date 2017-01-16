@@ -1,0 +1,32 @@
+From 64664581bd4fb5fdedd800d52b717f1727117635 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Danny=20M=C3=B8lgaard?= <moelgaard.dmp@gmail.com>
+Date: Thu, 10 Nov 2016 20:30:04 +0100
+Subject: [PATCH] user-details: Change message button label in userDetails
+
+'Message' can be both a noun and verb, thus resulting in confusion
+in terms of its translation to other languages. It also makes more
+sense to have the label correspond with the 'End Conversation'
+available in the sidebar's right-click menu.
+
+This commit changes the message button label in userDetails used by
+userPopover and userList from 'Message' to 'Start Conversation'.
+---
+ data/resources/user-details.ui | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/data/resources/user-details.ui b/data/resources/user-details.ui
+index 003768b..5be9597 100644
+--- a/data/resources/user-details.ui
++++ b/data/resources/user-details.ui
+@@ -178,7 +178,7 @@
+         </child>
+         <child>
+           <object class="GtkModelButton" id="messageButton">
+-            <property name="text" translatable="yes">Message</property>
++            <property name="text" translatable="yes">Start Conversation</property>
+             <property name="halign">fill</property>
+             <property name="hexpand">True</property>
+             <property name="visible">True</property>
+-- 
+2.7.4
+

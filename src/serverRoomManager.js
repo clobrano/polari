@@ -65,6 +65,7 @@ const _ServerRoomManager = new Lang.Class({
         roomList.connect('got-room', Lang.bind(this, this._onGotRoom));
         roomList.connect('notify::listing',
                          Lang.bind(this, this._onListingChanged));
+
         this._roomLists.set(account, { list: roomList, rooms: [] });
     },
 
@@ -152,7 +153,7 @@ const ServerRoomList = new Lang.Class({
 
         renderer = new Gtk.CellRendererToggle();
         renderer.connect('toggled', (cell, pathStr) => {
-            this._toggleChecked(Gtk.TreePath.new_from_string(pathString));
+            this._toggleChecked(Gtk.TreePath.new_from_string(pathStr));
         });
 
         column.pack_start(renderer, false);
@@ -189,7 +190,11 @@ const ServerRoomList = new Lang.Class({
         return this._pendingInfos.length ||
                this._manager.isLoading(this._account);
     },
-
+/*
+    set loading(param) {
+        this.loading = param;
+    },
+*/
     get selectedRooms() {
         let rooms = [];
         let [valid, iter] = this._list.model.get_iter_first();

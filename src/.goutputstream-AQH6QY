@@ -1,4 +1,3 @@
-const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
@@ -12,7 +11,6 @@ const Lang = imports.lang;
 const MainWindow = imports.mainWindow;
 const PasteManager = imports.pasteManager;
 const RoomManager = imports.roomManager;
-const ServerRoomManager = imports.serverRoomManager;
 const TelepathyClient = imports.telepathyClient;
 const UserTracker = imports.userTracker;
 const Utils = imports.utils;
@@ -22,9 +20,6 @@ const InitSetup = imports.initSetup;
 const MAX_RETRIES = 3;
 
 const IRC_SCHEMA_REGEX = /^(irc?:\/\/)([\da-z\.-]+):?(\d+)?\/(?:%23)?([\w\.\+-]+)/i;
-
-const AUTOSTART_DIR = GLib.get_user_config_dir() + '/autostart';
-const AUTOSTART_FILE = '/org.gnome.Polari.Autostart.desktop';
 
 const Application = new Lang.Class({
     Name: 'Application',
@@ -42,7 +37,7 @@ const Application = new Lang.Class({
 
         this.add_main_option('start-client', 0,
                              GLib.OptionFlags.NONE, GLib.OptionArg.NONE,
-                             _("Start Telepathy client"), null);
+                             _("Start Telephathy client"), null);
         this.connect('handle-local-options', (o, dict) => {
             try {
                 this.register(null);
@@ -154,14 +149,6 @@ const Application = new Lang.Class({
                 this.add_action(action);
         }));
 
-        this._settings = new Gio.Settings({ schema_id: 'org.gnome.Polari' });
-        let action = this._settings.create_action('run-in-background');
-        this.add_action(action);
-
-        this._settings.connect('changed::run-in-background',
-                               Lang.bind(this, this._onRunInBackgroundChanged));
-        this._onRunInBackgroundChanged();
-
         for (let i = 1; i < 10; i++)
             this.set_accels_for_action('app.nth-room(%d)'.format(i), ['<Alt>' + i]);
 
@@ -171,7 +158,6 @@ const Application = new Lang.Class({
         this._accountsMonitor = AccountsMonitor.getDefault();
         this._userStatusMonitor = UserTracker.getUserStatusMonitor();
         this._networksManager = NetworksManager.getDefault();
-        this._serverRoomManager = ServerRoomManager.getDefault();
 
         this._accountsMonitor.connect('account-status-changed',
                                       Lang.bind(this, this._onAccountStatusChanged));
@@ -179,43 +165,27 @@ const Application = new Lang.Class({
         this.pasteManager = new PasteManager.PasteManager();
         this.notificationQueue = new AppNotifications.NotificationQueue();
         this.commandOutputQueue = new AppNotifications.CommandOutputQueue();
-
-        let provider = new Gtk.CssProvider();
-        let uri = 'resource:///org/gnome/Polari/css/application.css';
-        let file = Gio.File.new_for_uri(uri);
-        try {
-            provider.load_from_file(Gio.File.new_for_uri(uri));
-        } catch(e) {
-            logError(e, "Failed to add application style");
-        }
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
-                                                 provider,
-                                                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
     },
 
     vfunc_activate: function() {
         this.activate_action('start-client', null);
 
         if (!this.active_window) {
-            let window = new MainWindow.MainWindow({ application: this });
-            window.connect('destroy', () => {
-                if (this._settings.get_boolean('run-in-background'))
-                    return;
-                this.emit('prepare-shutdown');
-            });
-
-            if (/*firstTimeStartup*/true) {
-                let setupDialog = new InitSetup.InitSetup({ application: this });
-                setupDialog.show_all();
-
-                setupDialog.connect('destroy', () => {
-                window.connect('notify::active-room',
-                               () => { this.emit('room-focus-changed'); });
-                window.connect('notify::is-active',
-                               () => { this.emit('room-focus-changed'); });
-                window.show_all();
-                });
+            if (true /*first time startup*/) {
+                while (true /*until setup is complete or cancelled*/) {
+                    let setupDialog = new InitSetup.InitSetup({ application: this });
+                    setupDialog.show_all();
+                }
             }
+
+            let window = new MainWindow.MainWindow({ application: this });
+            window.connect('destroy',
+                           () => { this.emit('prepare-shutdown'); });
+            window.connect('notify::active-room',
+                           () => { this.emit('room-focus-changed'); });
+            window.connect('notify::is-active',
+                           () => { this.emit('room-focus-changed'); });
+            window.show_all();
         }
         this.active_window.present();
     },
@@ -525,35 +495,6 @@ const Application = new Lang.Class({
         dialog.show();
     },
 
-    _createLink: function(file, target) {
-        try {
-            file.get_parent().make_directory_with_parents(null);
-        } catch(e if e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS)) {
-            // not an error, carry on
-        }
-
-        file.make_symbolic_link(target, null);
-    },
-
-    _onRunInBackgroundChanged: function() {
-        let file = Gio.File.new_for_path(AUTOSTART_DIR + AUTOSTART_FILE);
-
-        if (this._settings.get_boolean('run-in-background'))
-            try {
-                this._createLink(file, pkg.pkgdatadir + AUTOSTART_FILE);
-            } catch(e) {
-                if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS))
-                    log('Failed to create autostart link: ' + e.message);
-            }
-        else
-            try {
-                file.delete(null);
-            } catch(e) {
-                if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
-                    log('Failed to remove autostart link: ' + e.message);
-            }
-    },
-
     _onStartClient: function() {
         if (this._telepathyClient)
             return;
@@ -618,6 +559,5 @@ const Application = new Lang.Class({
 
     _onQuit: function() {
         this.get_windows().reverse().forEach(w => { w.destroy(); });
-        this.emit('prepare-shutdown');
     }
 });
