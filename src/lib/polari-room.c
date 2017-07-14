@@ -168,6 +168,40 @@ match_self_nick (PolariRoom *room,
   return result;
 }
 
+static gboolean
+match_keyword (const char *keyword,
+                 const char *text)
+{
+  char *folded_text, *match;
+  gboolean result = FALSE;
+  int len;
+
+  len = strlen (keyword);
+  if (len == 0)
+    return FALSE;
+
+  folded_text = FOLDFUNC (text);
+  match = MATCHFUNC (folded_text, keyword);
+
+  while (match != NULL)
+    {
+      gboolean starts_word, ends_word;
+
+      /* assume ASCII nicknames, so no complex pango-style breaks */
+      starts_word = (match == folded_text || !g_ascii_isalnum (*(match - 1)));
+      ends_word = !g_ascii_isalnum (*(match + len));
+
+      result = starts_word && ends_word;
+      if (result)
+        break;
+      match = MATCHFUNC (match + len, keyword);
+    }
+
+  FREEFUNC (folded_text);
+
+  return result;
+}
+
 gboolean
 polari_room_should_highlight_message (PolariRoom *room,
                                       const char *sender,
@@ -185,7 +219,7 @@ polari_room_should_highlight_message (PolariRoom *room,
   if (match_self_nick (room, sender))
     return FALSE;
 
-  return match_self_nick (room, message);
+  return match_self_nick (room, message) || match_keyword ("bug", message);
 }
 
 void
